@@ -127,4 +127,3 @@ Add this to your project's `.gemini/settings.json` (or global settings):
   }
 }
 ```
-*See `claude_mcp_config.json` and `.gemini/settings.json` in this repo for reference templates.*
