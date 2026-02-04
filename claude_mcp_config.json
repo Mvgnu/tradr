@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "aura-trading": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "./tradr",
+      "timeout": 30000,
+      "trust": true
+    }
+  }
+} 
