@@ -89,3 +89,42 @@ Tool suite:
 ```bash
 python run_tests.py --type tools
 ```
+
+### 1. Claude Desktop
+Add this to your `claude_desktop_config.json` (usually `~/Library/Application Support/Claude/claude_desktop_config.json` on Mac):
+
+```json
+{
+  "mcpServers": {
+    "aura-trading": {
+      "command": "/absolute/path/to/venv/bin/python",
+      "args": ["/absolute/path/to/tradr/mcp_server.py"],
+      "env": {
+        "ALPACA_KEY": "your_key",
+        "ALPACA_SECRET": "your_secret",
+        "GOOGLE_API_KEY": "your_key",
+        "FINNHUB_KEY": "your_key"
+      }
+    }
+  }
+}
+```
+*Note: We recommend using absolute paths to your venv python executable. Also, ensure the Python environment has `mcp` installed.*
+
+### 2. Gemini Code Assist / Editor
+Add this to your project's `.gemini/settings.json` (or global settings):
+
+```json
+{
+  "mcpServers": {
+    "tradr": {
+      "command": "/absolute/path/to/venv/bin/python",
+      "args": ["/absolute/path/to/tradr/mcp_server.py"],
+      "cwd": "/absolute/path/to/tradr",
+      "timeout": 30000,
+      "trust": true
+    }
+  }
+}
+```
+*See `claude_mcp_config.json` and `.gemini/settings.json` in this repo for reference templates.*
