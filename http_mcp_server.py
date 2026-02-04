@@ -372,6 +372,14 @@ tools = {
                 "stop_loss_pct": {
                     "type": "number",
                     "description": "Stop loss percentage"
+                },
+                "limit_price": {
+                    "type": "number",
+                    "description": "Limit price for limit orders (optional)"
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Optional trade rationale"
                 }
             },
             "required": ["symbol", "shares"]
@@ -423,6 +431,42 @@ tools = {
                 }
             },
             "required": ["symbol", "reason"]
+        }
+    ),
+
+    "buy_option": ToolInfo(
+        name="buy_option",
+        description="Buy an option contract.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "symbol": {
+                    "type": "string",
+                    "description": "The underlying stock symbol"
+                },
+                "strike": {
+                    "type": ["number", "string"],
+                    "description": "The strike price of the option"
+                },
+                "expiration_date": {
+                    "type": "string",
+                    "description": "The expiration date of the option in YYYY-MM-DD format"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "description": "The number of option contracts to buy"
+                },
+                "contract_type": {
+                    "type": "string",
+                    "description": "The type of option to buy, either 'put' or 'call'",
+                    "enum": ["put", "call"]
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Optional trade rationale"
+                }
+            },
+            "required": ["symbol", "strike", "expiration_date", "quantity", "contract_type"]
         }
     ),
     

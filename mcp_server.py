@@ -350,6 +350,14 @@ tools = {
                 "stop_loss_pct": {
                     "type": "number",
                     "description": "Stop loss percentage"
+                },
+                "limit_price": {
+                    "type": "number",
+                    "description": "Limit price for limit orders (optional)"
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Optional trade rationale"
                 }
             },
             "required": ["symbol", "shares"]
@@ -429,6 +437,10 @@ tools = {
                     "type": "string",
                     "description": "The type of option to buy, either 'put' or 'call'",
                     "enum": ["put", "call"]
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Optional trade rationale"
                 }
             },
             "required": ["symbol", "strike", "expiration_date", "quantity", "contract_type"]

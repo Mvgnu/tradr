@@ -218,6 +218,21 @@ class AgentMemory:
             logging.error(f"Error logging trade: {e}")
             return {"status": "error", "message": str(e)}
 
+    def get_last_trade_for_symbol(self, symbol: str) -> Optional[Dict]:
+        """Get most recent trade for a symbol."""
+        trades = self.memory.get("trades", [])
+        if not trades:
+            return None
+        symbol_upper = symbol.upper()
+        for trade in reversed(trades):
+            try:
+                trade_symbol = str(trade.get("symbol", "")).upper()
+            except Exception:
+                trade_symbol = ""
+            if trade_symbol == symbol_upper:
+                return trade
+        return None
+
     def update_performance(self, metrics: Dict) -> Dict:
         """Track performance metrics over time using Pydantic model."""
         try:
@@ -268,4 +283,3 @@ class AgentMemory:
             if len(snapshots) > 365 * 3:
                 self.memory["daily_snapshots"] = snapshots[-(365*3):]
             self.save_memory()
-

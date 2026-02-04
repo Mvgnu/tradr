@@ -2,6 +2,12 @@
 
 Async trading toolbox + MCP server for AURA. Includes market scans, portfolio/risk analytics, trade execution, and lightweight memory (watchlist + notes).
 
+## Disclaimer
+
+This software can place live orders if configured with your broker API key.
+
+It is for research/experimentation. Running it against real money is entirely at your own risk. This is not financial advice or a managed service.
+
 ## Quick start
 
 Install deps:

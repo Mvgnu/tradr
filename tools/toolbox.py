@@ -21,6 +21,7 @@ from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import (
     GetOptionContractsRequest,
     MarketOrderRequest,
+    LimitOrderRequest,
     GetPortfolioHistoryRequest,
     TakeProfitRequest,
     StopLossRequest,
@@ -2136,6 +2137,17 @@ class AsyncToolbox:
                         return str(otype).lower() if otype is not None else ""
 
                     for pos in positions:
+                        position_reason = ""
+                        if self.memory:
+                            last_trade = self.memory.get_last_trade_for_symbol(pos.symbol)
+                            if last_trade and last_trade.get("reason"):
+                                position_reason = last_trade.get("reason", "")
+                            else:
+                                for item in self.memory.get_watchlist():
+                                    if str(item.get("symbol", "")).upper() == str(pos.symbol).upper():
+                                        position_reason = item.get("reason", "")
+                                        break
+
                         # Get technical signals for position (with timeout)
                         try:
                             async with asyncio.timeout(10):  # 10 second timeout per position
@@ -2180,6 +2192,7 @@ class AsyncToolbox:
                             "unrealized_pl_pct": float(pos.unrealized_plpc),
                             "position_pct": position_pct,
                             "sector": SECTOR_MAP.get(pos.symbol, "Other"),
+                            "position_reason": position_reason,
                             "technical_signals": tech_signals,
                             "take_profit_order_id": take_profit_order_id,
                             "stop_loss_order_id": stop_loss_order_id,
@@ -2448,7 +2461,16 @@ class AsyncToolbox:
             self._log_tool_usage("calculate_portfolio_beta", args, result, time.time() - start_time)
             return result
 
-    async def smart_order_entry(self, symbol: str, shares: float, order_type: str = "smart", take_profit_pct: float = None, stop_loss_pct: float = None) -> Dict:
+    async def smart_order_entry(
+        self,
+        symbol: str,
+        shares: float,
+        order_type: str = "smart",
+        take_profit_pct: float = None,
+        stop_loss_pct: float = None,
+        limit_price: float = None,
+        reason: str = "",
+    ) -> Dict:
         """
         Smart order entry with bracket orders and risk management.
         
@@ -2489,7 +2511,15 @@ class AsyncToolbox:
         """
         import time
         start_time = time.time()
-        args = {"symbol": symbol, "shares": shares, "order_type": order_type, "take_profit_pct": take_profit_pct, "stop_loss_pct": stop_loss_pct}
+        args = {
+            "symbol": symbol,
+            "shares": shares,
+            "order_type": order_type,
+            "take_profit_pct": take_profit_pct,
+            "stop_loss_pct": stop_loss_pct,
+            "limit_price": limit_price,
+            "reason": reason,
+        }
         
         print(f"[TRADE] Starting smart_order_entry for {symbol}: {shares} shares")
         
@@ -2554,24 +2584,40 @@ class AsyncToolbox:
             stop_loss_pct = max(0.01, min(stop_loss_pct, 0.10))  # Between 1% and 10%
             take_profit_pct = max(0.01, min(take_profit_pct, 0.20))  # Between 1% and 20%
             
-            stop_price = round(current_price * (1 - stop_loss_pct), 2)
-            take_profit_price = round(current_price * (1 + take_profit_pct), 2) if take_profit_pct else None
-            
-            print(f"[TRADE] Calculated prices for {symbol}: entry=${current_price}, stop=${stop_price}, take_profit=${take_profit_price}")
+            pricing_base = limit_price if limit_price else current_price
+            stop_price = round(pricing_base * (1 - stop_loss_pct), 2)
+            take_profit_price = round(pricing_base * (1 + take_profit_pct), 2) if take_profit_pct else None
+
+            print(f"[TRADE] Calculated prices for {symbol}: entry=${pricing_base}, stop=${stop_price}, take_profit=${take_profit_price}")
             
             stop_loss_req = StopLossRequest(stop_price=stop_price)
             take_profit_req = TakeProfitRequest(limit_price=take_profit_price) if take_profit_price else None
 
-            order_request = MarketOrderRequest(
-                symbol=symbol,
-                qty=shares,
-                side=OrderSide.BUY,
-                type=OrderType.MARKET,
-                time_in_force=TimeInForce.GTC,
-                order_class=OrderClass.BRACKET,
-                stop_loss=stop_loss_req,
-                take_profit=take_profit_req,
-            )
+            if order_type == "limit" or limit_price is not None:
+                if not limit_price:
+                    raise ValueError("limit_price is required for limit orders")
+                order_request = LimitOrderRequest(
+                    symbol=symbol,
+                    qty=shares,
+                    side=OrderSide.BUY,
+                    type=OrderType.LIMIT,
+                    time_in_force=TimeInForce.GTC,
+                    order_class=OrderClass.BRACKET,
+                    limit_price=limit_price,
+                    stop_loss=stop_loss_req,
+                    take_profit=take_profit_req,
+                )
+            else:
+                order_request = MarketOrderRequest(
+                    symbol=symbol,
+                    qty=shares,
+                    side=OrderSide.BUY,
+                    type=OrderType.MARKET,
+                    time_in_force=TimeInForce.GTC,
+                    order_class=OrderClass.BRACKET,
+                    stop_loss=stop_loss_req,
+                    take_profit=take_profit_req,
+                )
             
             print(f"[TRADE] Submitting bracket order for {symbol}: {order_request}")
             
@@ -2587,11 +2633,11 @@ class AsyncToolbox:
                 "order_id": order_id,
                 "symbol": symbol,
                 "shares": shares,
-                "estimated_fill_price": current_price,
+                "estimated_fill_price": pricing_base,
                 "order_type": order_type,
                 "take_profit_price": take_profit_price,
                 "stop_loss_price": stop_price,
-                "estimated_cost": shares * current_price,
+                "estimated_cost": shares * pricing_base,
                 "estimated_slippage": estimated_slippage,
                 "timestamp": dt.datetime.now(dt.timezone.utc).isoformat()
             }
@@ -2635,15 +2681,15 @@ class AsyncToolbox:
 
                             # Log the trade with estimated slippage
                             if self.memory:
-                                trade_log_data = {
-                                    "symbol": symbol,
-                                    "qty": result["actual_shares"],
-                                    "price": result["actual_entry_price"],
-                                    "side": "buy",
-                                    "order_id": order_id,
-                                    "reason": "Agent execution",
-                                    "estimated_slippage": estimated_slippage,
-                                }
+                trade_log_data = {
+                    "symbol": symbol,
+                    "qty": result["actual_shares"],
+                    "price": result["actual_entry_price"],
+                    "side": "buy",
+                    "order_id": order_id,
+                    "reason": reason or "Agent execution",
+                    "estimated_slippage": estimated_slippage,
+                }
                                 self.memory.log_trade(trade_log_data)
                             break
                     except Exception:
@@ -2670,7 +2716,7 @@ class AsyncToolbox:
             self._log_tool_usage("smart_order_entry", args, result, time.time() - start_time)
             return result
 
-    async def buy_option(self, symbol: str, strike: float, expiration_date: str, quantity: int, contract_type: str) -> Dict:
+    async def buy_option(self, symbol: str, strike: float, expiration_date: str, quantity: int, contract_type: str, reason: str = "") -> Dict:
         """
         Buy an option contract.
         
@@ -2685,7 +2731,7 @@ class AsyncToolbox:
             A dictionary containing the order details.
         """
         start_time = time.time()
-        args = {"symbol": symbol, "strike": strike, "expiration_date": expiration_date, "quantity": quantity, "contract_type": contract_type}
+        args = {"symbol": symbol, "strike": strike, "expiration_date": expiration_date, "quantity": quantity, "contract_type": contract_type, "reason": reason}
         
         try:
             trading_client = self.clients.get("alpaca")
@@ -2733,6 +2779,17 @@ class AsyncToolbox:
                 "order_type": "market",
                 "timestamp": submitted_order.submitted_at.isoformat(),
             }
+            if self.memory:
+                self.memory.log_trade(
+                    {
+                        "symbol": symbol,
+                        "qty": float(quantity),
+                        "price": float(getattr(submitted_order, "filled_avg_price", 0.0) or 0.0),
+                        "side": "buy",
+                        "order_id": str(submitted_order.id) if getattr(submitted_order, "id", None) is not None else None,
+                        "reason": reason or "Options trade",
+                    }
+                )
             
             self._log_tool_usage("buy_option", args, result, time.time() - start_time)
             return result
