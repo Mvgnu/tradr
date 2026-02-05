@@ -133,6 +133,24 @@ this is strictly my personal experience and should not be taken as financial adv
 
 I have not yet tested GPT 5.2 or Grok with this toolset.
 
+## How to Vibe trade
+
+Wire up the MCP server to your AI agent of choice, set the environment variables, and start vibing.
+
+Example prompt:
+
+"Hmm google earnings today, stock down a lil
+I know:
+- anthropic trained opus 4.5 on tpus
+- cost reduction likely due to tpus
+- inference on tpus
+- msft cloud disappointment
+- openai previously also eyed tpus for their models
+
+its basically the if transformers are a thing, google is the sauce, and i am extremely bullish on them, obviously doesnt mean the market agrees - but earnings are after hours today, opinion?"
+
+Agent will look up options flows, insider activity, and 13f changes, company news, and technicals to make a informed suggestion.
+
 ## LICENSE
 
 MIT
