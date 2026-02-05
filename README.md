@@ -152,7 +152,7 @@ I know:
 
 its basically the if transformers are a thing, google is the sauce, and i am extremely bullish on them, obviously doesnt mean the market agrees - but earnings are after hours today, opinion?"
 
-Agent will look up options flows, insider activity, and 13f changes, company news, and technicals to make a informed suggestion.
+Agent will look up options flows, insider activity, and 13f changes, company news, and technicals to make a informed suggestion or YOLO your money its an LLM you never know - beware risks THERE ARE NO GUARDRAILS IN PLACE.
 
 ## LICENSE
 
