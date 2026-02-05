@@ -2681,15 +2681,15 @@ class AsyncToolbox:
 
                             # Log the trade with estimated slippage
                             if self.memory:
-                trade_log_data = {
-                    "symbol": symbol,
-                    "qty": result["actual_shares"],
-                    "price": result["actual_entry_price"],
-                    "side": "buy",
-                    "order_id": order_id,
-                    "reason": reason or "Agent execution",
-                    "estimated_slippage": estimated_slippage,
-                }
+                                trade_log_data = {
+                                    "symbol": symbol,
+                                    "qty": result["actual_shares"],
+                                    "price": result["actual_entry_price"],
+                                    "side": "buy",
+                                    "order_id": order_id,
+                                    "reason": reason or "Agent execution",
+                                    "estimated_slippage": estimated_slippage,
+                                }
                                 self.memory.log_trade(trade_log_data)
                             break
                     except Exception:
