@@ -125,6 +125,9 @@ Add this to your project's `.gemini/settings.json` (or global settings):
       "trust": true
     }
   }
+} 
+```
+
 
 ## Notes
 
