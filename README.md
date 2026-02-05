@@ -125,8 +125,14 @@ Add this to your project's `.gemini/settings.json` (or global settings):
       "trust": true
     }
   }
-}
-```
+
+## Notes
+
+I personally suggest using this with Gemini 3 Pro. In my personal experience Gemini 3 outperformed Opus 4.5 -
+this is strictly my personal experience and should not be taken as financial advice or a recommendation.
+
+I have not yet tested GPT 5.2 or Grok with this toolset.
+
 ## LICENSE
 
 MIT
